@@ -1,0 +1,16 @@
+{
+  "name": "week-25-assignment-holy-grail",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+    
+  },
+  "author": "shannabsp@gamil.com",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.3",
+    "redis": "^4.0.4"
+  }
+}
