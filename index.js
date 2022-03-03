@@ -1,49 +1,68 @@
-const express = require("express");
-const app = express();
-
-const redis = require("redis");
-const client = redis.createClient();
+var express = require("express");
+var app = express();
+var redis = require("redis");
+var client = redis.createClient();
 client.connect();
+// serve static files from public directory
+app.use(express.static("public"));
 
-const keys = ["header", "left", "article", "right", "footer"];
-
-const setInitialData = async () => {
-  await client.mSet([...keys.map((x) => [x, "1"])]);
-  const result = await client.mGet(keys);
-};
-setInitialData();
-
+// init values
+const setIntialData = async () => {
+  await client.mSet("header", 0, "left", 0, "article", 0, "right", 0, "footer", 0);
+  await client.mGet(
+  ["header", "left", "article", "right", "footer"],
+  function (err, value) {
+    console.log(value);
+  }
+)};
+setIntialData();
 function data() {
   return new Promise(async (resolve, reject) => {
-    const value = await client.mGet(keys);
-
-    const data = { ...keys };
-    keys.forEach((key, i) => {
-      data[key] = value[i];
+     await client.mGet(
+        ["header", "left", "article", "right", "footer"],
+        function (err, value) {
+          const data = {
+            header: Number(value[0]),
+            left: Number(value[1]),
+            article: Number(value[2]),
+            right: Number(value[3]),
+            footer: Number(value[4]),
+          };
+          err ? reject(null) : resolve(data);
+        }
+      );
     });
-
-    resolve(data);
-  });
 }
 
-app.use(express.static("client"));
-
-app.get("/data", (_, res) => {
+// get key data
+app.get("/data", function (req, res) {
   data().then((data) => {
+    console.log(data);
     res.send(data);
   });
 });
 
+// plus
 app.get("/update/:key/:value", async (req, res) => {
-  const { key, value } = req.params;
-  const newValue = Number(await client.get(key)) + Number(value);
-  await client.set(key, newValue.toString());
+  const key = req.params.key;
+  let value = Number(req.params.value);
+ await client.get(key, async (err, reply) =>{
+    // new value
+    value = Number(reply) + value;
+    await client.set(key, value);
 
-  data().then((data) => {
-    res.send(data);
+    // return data to client
+    data().then((data) => {
+      console.log(data);
+      res.send(data);
+    });
   });
 });
 
-const port = Number(process.env.PORT) || 3000;
+app.listen(3000, () => {
+  console.log("Running on 3000");
+});
 
-app.listen(port, () => console.log(`Running on port: ${port}...`));
+process.on("exit", function () {
+  client.quit();
+});
