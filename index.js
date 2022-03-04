@@ -8,56 +8,83 @@ app.use(express.static("public"));
 
 // init values
 const setIntialData = async () => {
-  await client.mSet("header", 0, "left", 0, "article", 0, "right", 0, "footer", 0);
+  console.log('setIntialData')
+  await client.mSet(
+    'header',
+    0,
+    'left',
+    0,
+    'article',
+    0,
+    'right',
+    0,
+    'footer',
+    0
+  )
   await client.mGet(
-  ["header", "left", "article", "right", "footer"],
-  function (err, value) {
-    console.log(value);
+    ['header', 'left', 'article', 'right', 'footer'],
+    function (err, value) {
+      console.log(value)
+    }
+  )
+}
+setIntialData()
+const data = async () => {
+  console.log('data')
+
+  // Option 1
+  // return client.mGet(['header', 'left', 'article', 'right', 'footer'])
+
+  //Option 2
+  const value = await client.mGet([
+    'header',
+    'left',
+    'article',
+    'right',
+    'footer',
+  ])
+  const data = {
+    header: Number(value[0]),
+    left: Number(value[1]),
+    article: Number(value[2]),
+    right: Number(value[3]),
+    footer: Number(value[4]),
   }
-)};
-setIntialData();
-function data() {
-  return new Promise(async (resolve, reject) => {
-     await client.mGet(
-        ["header", "left", "article", "right", "footer"],
-        function (err, value) {
-          const data = {
-            header: Number(value[0]),
-            left: Number(value[1]),
-            article: Number(value[2]),
-            right: Number(value[3]),
-            footer: Number(value[4]),
-          };
-          err ? reject(null) : resolve(data);
-        }
-      );
-    });
+  return Promise.resolve(data)
 }
 
 // get key data
-app.get("/data", function (req, res) {
-  data().then((data) => {
-    console.log(data);
-    res.send(data);
-  });
-});
+app.get('/data', async (req, res) => {
+  //Option 1
+  // data().then(value => {
+  //   const data = {
+  //     header: Number(value[0]),
+  //     left: Number(value[1]),
+  //     article: Number(value[2]),
+  //     right: Number(value[3]),
+  //     footer: Number(value[4]),
+  //   }
+  //   res.send(data)
+  // })
+
+  //Option 2
+  const dataObj = await data()
+  res.send(dataObj)
+})
 
 // plus
-app.get("/update/:key/:value", async (req, res) => {
-  const key = req.params.key;
-  let value = Number(req.params.value);
- await client.get(key, async (err, reply) =>{
-    // new value
-    value = Number(reply) + value;
-    await client.set(key, value);
+app.get('/update/:key/:value', async (req, res) => {
+  const { key, value } = req.params
 
-    // return data to client
-    data().then((data) => {
-      console.log(data);
-      res.send(data);
-    });
-  });
-});
+  // get the actual value for that key
+  const currentValue = await client.get(key)
+  console.log('currentValue', currentValue)
+
+  await client.set(key, Number(currentValue) + Number(value))
+
+  const dataObj = await data()
+  res.send(dataObj)
+})
 
 app.listen(3000, () => {
   console.log("Running on 3000");
