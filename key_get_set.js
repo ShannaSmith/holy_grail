@@ -14,8 +14,25 @@ const redis = require("redis");
     await client.set('my_key_2', 'Hello World');
     const reply2 = await client.get('my_key_2');
       console.log(reply2);
-      await client.MSET(['header',0,'left',0,'article',0,'right',0,'footer',0]);
-      const value = await client.MGET(['header','left','article','right','footer']);
+      await client.mSet([
+        'header',
+        0,
+        'left',
+        0,
+        'article',
+        0,
+        'right',
+        0,
+        'footer',
+        0,
+      ])
+      const value = await client.mGet([
+        'header',
+        'left',
+        'article',
+        'right',
+        'footer',
+      ])
         console.log(value);
 
     client.quit();
